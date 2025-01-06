@@ -13,6 +13,14 @@ window.addEventListener('load', function () {
     let bottomY = canvas.height - 8; //for gameOver
     let gameSpeed = 4; // Initial game speed
     let randomY; //random y position for ground objects
+    let gameStarted = false;
+    
+    // Start the game after a 5-second delay, 5,000 milliseconds = 5 seconds.
+    setTimeout(() => {
+        gameStarted = true; // Mark the game as started
+        //animate(); // Start the animation loop
+    }, 6000); 
+
 
     // Ensure Player and Ground classes are defined
     if (typeof Player === 'undefined' || typeof Ground === 'undefined') {
@@ -20,8 +28,9 @@ window.addEventListener('load', function () {
         return;
     }
 
-    const player = new Player();
     const ground = new Ground();
+    //let playerY = ground.y;//setting player to start on to of ground. Didn't work :(
+    const player = new Player();
 
 
     // Collision detection function
@@ -66,7 +75,10 @@ window.addEventListener('load', function () {
         for (let i = groundArray.length - 1; i >= 0; i--) {
             const ground = groundArray[i];
             ground.update(gameSpeed); // Pass gameSpeed to the update function of the ground
-            ground.draw(context);
+
+            if(gameStarted){//ground is drawn after 6 seconds *****
+                ground.draw(context);
+            }
 
             // Remove objects that go off-screen
             if (gameRunning && !gamePaused) {
@@ -94,8 +106,8 @@ window.addEventListener('load', function () {
 
                 checkGameOver(player); // Check for game over after collision
             }
-            console.log("player bottom: ",player.sides.bottom);
-            console.log("Ground top: ", ground.y);
+            // console.log("player bottom: ",player.sides.bottom);
+            // console.log("Ground top: ", ground.y);
             // if (player.sides.bottom == ground.y){
             //    player.y = ground.y - player.height;
             //    player.velocity.y = 0; 
@@ -154,16 +166,29 @@ window.addEventListener('load', function () {
         }
     }
 
+    //draws loading screen
+    function drawLoading(){
+        if(!gameStarted){
+            context.fillStyle = "rgba(0, 0, 0, 0.5)";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = "white";
+            context.font = "48px Arial";
+            context.textAlign = "center";
+            context.fillText("Loading...", canvas.width / 2, canvas.height / 2);
+        }
+
+    }
+
     // Animation loop
     function animate() {
-        // Stop animation if the game is over
+       
         // game state checks
         // console.log(`Game running: ${gameRunning}`);
         // console.log(`Game paused: ${gamePaused}`);
         // console.log(groundArray);
         // console.log("Ground position: ", ground.x, ground.y);
-        
-
+    
+     // Stop animation if the game is over
         if (!gameRunning) return;
         drawPauseMessage(context);
         if (gamePaused) return; // Stop animation if the game is paused
@@ -174,8 +199,10 @@ window.addEventListener('load', function () {
         context.clearRect(0, 0, canvas.width, canvas.height);
 
         // Update and draw the player
-        player.update();
-        player.draw(context);
+        if (gameStarted){
+            player.update();
+            player.draw(context);
+        }
 
         // Handle ground objects
         handleGroundObjects();
@@ -183,6 +210,8 @@ window.addEventListener('load', function () {
 
         // Draw the score
         drawScore();
+        //Draw loading screen :)
+        drawLoading();
     }
 
     // Start animation and obstacle spawning

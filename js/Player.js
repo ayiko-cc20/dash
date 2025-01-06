@@ -1,7 +1,7 @@
     class Player {
         constructor(){
             this.x = 100;
-            this.y = 100;
+            this.y = canvas.height-250;
             
             this.velocity = {
                 x: 0,
