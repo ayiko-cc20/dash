@@ -3,23 +3,45 @@ window.addEventListener('load', function () {
     const context = canvas.getContext('2d');
 
     // Set canvas dimensions
+    let cavwidth;
+    let cavheight;
+    window.addEventListener('Resize', e =>{
+        // cavwidth = e.currentTarget.innerWidth;
+        // cavheight = e.currentTarget.innerHeight;
+        console.log(e)
+    });
+
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    // canvas.width = cavwidth;
+    // canvas.height = cavheight;
 
     let groundArray = [];
     let score = 0; // Initialize score
     let gameRunning = true; // Track game state
     let gamePaused = false; // Track paused state
-    let bottomY = canvas.height - 8; //for gameOver
+    let bottomY = canvas.height - 8; //collision for gameOver
     let gameSpeed = 4; // Initial game speed
     let randomY; //random y position for ground objects
     let gameStarted = false;
+    let ollisionBox = {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0
+    };
+    //debug mode
+    let debug = false;
+    
+    document.addEventListener('keydown', e =>{
+        if(e.key === 'd'|| e.key === 'D')
+        debug = true;
+    });
     
     // Start the game after a 5-second delay, 5,000 milliseconds = 5 seconds.
     setTimeout(() => {
         gameStarted = true; // Mark the game as started
-        //animate(); // Start the animation loop
-    }, 6000); 
+    }, 7000); 
 
 
     // Ensure Player and Ground classes are defined
@@ -28,7 +50,7 @@ window.addEventListener('load', function () {
         return;
     }
 
-    const ground = new Ground();
+    
     //let playerY = ground.y;//setting player to start on to of ground. Didn't work :(
     const player = new Player();
 
@@ -42,7 +64,7 @@ window.addEventListener('load', function () {
             rect1.y + rect1.height > rect2.y
         );
     }
-
+    
     // Function to get a random Y position for the ground (obstacles)
     function getRandomY() {
         const minY = canvas.height - 200;
@@ -51,7 +73,7 @@ window.addEventListener('load', function () {
     }
 
     // Add the initial ground object
-    groundArray.push(new Ground(canvas.width, randomY));
+    groundArray.push(Ground.getRandomGround(canvas.width, getRandomY()));
 
     // Function to spawn obstacles
     function spawnGroundObject() {
@@ -60,7 +82,7 @@ window.addEventListener('load', function () {
 
         if (gameRunning && !gamePaused) {
             if (!lastObject || lastObject.x < canvas.width - minSpacing) {
-                groundArray.push(new Ground(canvas.width, randomY));
+                groundArray.push(Ground.getRandomGround(canvas.width, getRandomY()));
             }
         }
 
@@ -84,15 +106,25 @@ window.addEventListener('load', function () {
             if (gameRunning && !gamePaused) {
                 if (ground.x + ground.width < 0) {
                     groundArray.splice(i, 1);
-                    score += 1; // Increase score when an obstacle goes off-screen
+                    if (gameStarted) {
+                        score += 1; // Increase score when an obstacle goes off-screen
+                    }
                     updateGameSpeed(); // Check and update the game speed
                 }
             }
 
-            // Collision detection with ground
-            if (detectCollision(player, ground)) {
+            // Use the ground object's updated collision box for detection
+            collisionBox = {
+                x: ground.collisionBox.collisionX,
+                y: ground.collisionBox.collisionY,
+                width: ground.collisionBox.collisionWidth,
+                height: ground.collisionBox.collisionHeight,
+            };
+          
+            // Check for collisions with the player
+            if (detectCollision(player, collisionBox)) {
                 player.velocity.y = 0;
-                player.y = ground.y - player.height;
+                player.y = collisionBox.y - player.height;
                 // if(player.sides.bottom + player.velocity.y < ground.height){
                 //     player.velocity.y += player.gravity;
                 //     player.sides.bottom = player.y + player.height;
@@ -104,14 +136,8 @@ window.addEventListener('load', function () {
                 // player.sides.bottom = ground.y - player.height + player.y;
                 // player.velocity.y = 0;
 
-                checkGameOver(player); // Check for game over after collision
+                checkGameOver(player);
             }
-            // console.log("player bottom: ",player.sides.bottom);
-            // console.log("Ground top: ", ground.y);
-            // if (player.sides.bottom == ground.y){
-            //    player.y = ground.y - player.height;
-            //    player.velocity.y = 0; 
-            // }
         }
     }
 
@@ -203,11 +229,15 @@ window.addEventListener('load', function () {
             player.update();
             player.draw(context);
         }
+        //collision box for ground objects
+        if (debug) {
+            context.fillRect(collisionBox.x, collisionBox.y, collisionBox.width,
+             collisionBox.height);
+        }
 
         // Handle ground objects
         handleGroundObjects();
         checkGameOver(player);
-
         // Draw the score
         drawScore();
         //Draw loading screen :)
@@ -229,7 +259,9 @@ window.addEventListener('load', function () {
                 }
                 break;
             case 'p': // Pause or resume the game when 'P' is pressed
+            if (gameStarted) {
                 togglePause();
+            }
                 break;
             default:
                 break;
